@@ -6,3 +6,4 @@ pillow
 langchain
 langchain-groq
 python-dotenv
+easyocr
