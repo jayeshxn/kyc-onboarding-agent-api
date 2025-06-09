@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "properties": {
+    "documentType": {
+      "type": "string",
+      "enum": ["AADHAR"],
+      "description": "Type of the document (only AADHAR supported)"
+    },
+    "documentId": {
+      "type": "string",
+      "pattern": "^\\d{12}$",
+      "description": "12-digit Aadhar number"
+    },
+    "fullName": {
+      "type": "string",
+      "description": "Full name of the person"
+    },
+    "dateOfBirth": {
+      "type": "string",
+      "pattern": "^\\d{2}/\\d{2}/\\d{4}$",
+      "description": "Date of birth in DD/MM/YYYY format"
+    },
+    "gender": {
+      "type": "string",
+      "enum": ["MALE", "FEMALE"],
+      "description": "Gender of the person"
+    },
+    "address": {
+      "type": "string",
+      "description": "Complete address"
+    }
+  }
+}
