@@ -3,8 +3,10 @@ from typing import Dict
 import boto3
 from botocore.exceptions import ClientError
 import os
+import tempfile
 from pydantic import BaseModel
 from dotenv import load_dotenv
+import easyocr
 import json
 from agent import parse_kyc_documents
 import io
@@ -13,25 +15,21 @@ from enum import Enum
 
 load_dotenv()
 
-# Configuration
 class StorageType(str, Enum):
     S3 = "s3"
     LOCAL = "local"
 
-# Set this to change storage type
 STORAGE_TYPE = StorageType.LOCAL  # Change to StorageType.S3 for S3 storage
 
-# Configure file paths here
 LOCAL_FILE_PATH = "Aadhar Sample.jpeg"  # Example local file path
 S3_CONFIG = {
     "bucket": os.getenv('S3_BUCKET_NAME'),
     "key": "kyc_documents/user123.jpg"  # Example S3 object key
 }
 
-app = FastAPI(title="KYC Document Auto-fill API",
+app = FastAPI(title="KYC Document Processing API",
              description="API to process KYC documents using OCR and Groq LLM")
 
-# Initialize S3 client only if using S3
 s3_client = None
 if STORAGE_TYPE == StorageType.S3:
     s3_client = boto3.client(
@@ -41,8 +39,13 @@ if STORAGE_TYPE == StorageType.S3:
         region_name=os.getenv('AWS_REGION', 'us-east-1')
     )
 
-class KYCRequest(BaseModel):
-    userId: str
+class KYCResponse(BaseModel):
+    documentType: str
+    documentId: str
+    fullName: str
+    dateOfBirth: str
+    gender: str
+    address: str
 
 def get_local_file() -> dict:
     """Get file from specified local path"""
@@ -66,8 +69,8 @@ def get_s3_file() -> dict:
     except ClientError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/fill-kyc-json")
-async def fill_kyc_json(request: KYCRequest):
+@app.get("/ocr-service/process/{userId}", response_model=KYCResponse)
+async def process_document(userId: str):
     """
     Process single KYC document and fill JSON schema using OCR and Groq LLM
     """
