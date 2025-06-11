@@ -12,27 +12,25 @@ from agent import parse_kyc_documents
 import io
 from pathlib import Path
 from enum import Enum
+from lab import get_s3_file
 
 load_dotenv()
 
-class StorageType(str, Enum):
-    S3 = "s3"
-    LOCAL = "local"
+LOCAL_FILE_PATH = "kyc.img"
 
-STORAGE_TYPE = StorageType.LOCAL  # Change to StorageType.S3 for S3 storage
+# Ensure KYC_Images directory exists
+os.makedirs("KYC_Images", exist_ok=True)
 
-LOCAL_FILE_PATH = "Aadhar Sample.jpeg"  # Example local file path
 S3_CONFIG = {
     "bucket": os.getenv('S3_BUCKET_NAME'),
-    "key": "kyc_documents/user123.jpg"  # Example S3 object key
+    "key_prefix": "kyc_documents/"  # Prefix for S3 objects
 }
 
 app = FastAPI(title="KYC Document Processing API",
-             description="API to process KYC documents using OCR and Groq LLM")
+             description="API to process KYC documents using OCR and LLM")
 
 s3_client = None
-if STORAGE_TYPE == StorageType.S3:
-    s3_client = boto3.client(
+s3_client = boto3.client(
         's3',
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
@@ -55,19 +53,19 @@ def get_local_file() -> dict:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
 
-def get_s3_file() -> dict:
-    """Get file from specified S3 path"""
-    if not s3_client:
-        raise HTTPException(status_code=500, detail="S3 client not initialized")
+# def get_s3_file(userId: str):
+#     """Get file from specified S3 path"""
+#     if not s3_client:
+#         raise HTTPException(status_code=500, detail="S3 client not initialized")
     
-    try:
-        response = s3_client.get_object(
-            Bucket=S3_CONFIG["bucket"],
-            Key=S3_CONFIG["key"]
-        )
-        return {'document': io.BytesIO(response['Body'].read())}
-    except ClientError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#     try:
+#         print("Downloading file from S3")
+#         s3_client.download_file("dtcchakathon", userId+"/kyc.img", "kyc.img")
+#         print("File downloaded")
+        
+#     except ClientError as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+    
 
 @app.get("/ocr-service/process/{userId}", response_model=KYCResponse)
 async def process_document(userId: str):
@@ -75,11 +73,10 @@ async def process_document(userId: str):
     Process single KYC document and fill JSON schema using OCR and Groq LLM
     """
     try:
-        # Get file based on storage type
-        if STORAGE_TYPE == StorageType.S3:
-            uploaded_files = get_s3_file()
-        else:
-            uploaded_files = get_local_file()
+        print("User ID", userId)
+        get_s3_file(userId)
+        print("File downloaded")
+        uploaded_files = get_local_file()
         
         if not uploaded_files:
             raise HTTPException(status_code=404, detail="Could not read document")
