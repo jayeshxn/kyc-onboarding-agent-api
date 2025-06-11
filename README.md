@@ -82,23 +82,17 @@ uvicorn kyc_service_api:app --reload
 
 2. Make a request:
 ```bash
-curl -X POST "http://localhost:8000/fill-kyc-json" \
-     -H "Content-Type: application/json" \
-     -d '{"userId": "USR-123"}'
+curl "http://localhost:8000/ocr-service/process/USR-123"
 ```
 
 ## API Endpoints
 
-### POST /fill-kyc-json
+### GET /ocr-service/process/{userId}
 
 Process a KYC document and extract information.
 
-Request body:
-```json
-{
-    "userId": "string"
-}
-```
+Parameters:
+- `userId`: User ID in the path
 
 Response:
 ```json
