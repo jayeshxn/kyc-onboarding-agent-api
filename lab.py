@@ -3,13 +3,9 @@ from typing import Dict
 import boto3
 from botocore.exceptions import ClientError
 import os
-import tempfile
 from pydantic import BaseModel
 from dotenv import load_dotenv
-import easyocr
-import json
 from agent import parse_kyc_documents
-import io
 from pathlib import Path
 from enum import Enum
 
